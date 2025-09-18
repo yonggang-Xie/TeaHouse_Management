@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>茶楼管理系统</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- 登录页面 -->
+        <div id="login-page" class="page active">
+            <div class="login-container">
+                <h1>茶楼管理系统</h1>
+                <div class="login-form">
+                    <h2>用户登录</h2>
+                    <div class="form-group">
+                        <label>用户名:</label>
+                        <input type="text" id="login-username" placeholder="请输入用户名">
+                    </div>
+                    <div class="form-group">
+                        <label>密码:</label>
+                        <input type="password" id="login-password" placeholder="请输入密码">
+                    </div>
+                    <button onclick="login()" class="login-btn">登录</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主界面 -->
+        <div id="main-page" class="page">
+            <header>
+                <h1>茶楼管理系统</h1>
+                <div class="user-info">
+                    <span>当前用户: <span id="current-user">--</span></span>
+                    <button onclick="logout()" class="logout-btn">退出登录</button>
+                </div>
+                <div class="nav-buttons">
+                    <button onclick="showPage('admin-page')" id="admin-btn">后台管理</button>
+                    <button onclick="showPage('report-page')">每日明细</button>
+                </div>
+            </header>
+
+            <!-- 包房区域 -->
+            <section class="room-section">
+                <h2>包房</h2>
+                <div class="room-grid">
+                    <div class="room-button idle" data-room="大雅01" onclick="selectRoom('大雅01')">
+                        <span class="room-name">大雅01</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="大雅02" onclick="selectRoom('大雅02')">
+                        <span class="room-name">大雅02</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="小雅801" onclick="selectRoom('小雅801')">
+                        <span class="room-name">小雅801</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="小雅802" onclick="selectRoom('小雅802')">
+                        <span class="room-name">小雅802</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="小雅803" onclick="selectRoom('小雅803')">
+                        <span class="room-name">小雅803</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="小雅805" onclick="selectRoom('小雅805')">
+                        <span class="room-name">小雅805</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="小雅806" onclick="selectRoom('小雅806')">
+                        <span class="room-name">小雅806</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="小雅807" onclick="selectRoom('小雅807')">
+                        <span class="room-name">小雅807</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="小雅808" onclick="selectRoom('小雅808')">
+                        <span class="room-name">小雅808</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="小雅809" onclick="selectRoom('小雅809')">
+                        <span class="room-name">小雅809</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 大厅区域 -->
+            <section class="room-section">
+                <h2>大厅</h2>
+                <div class="room-grid">
+                    <div class="room-button idle" data-room="大厅1" onclick="selectRoom('大厅1')">
+                        <span class="room-name">大厅1</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="大厅2" onclick="selectRoom('大厅2')">
+                        <span class="room-name">大厅2</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="大厅3" onclick="selectRoom('大厅3')">
+                        <span class="room-name">大厅3</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="大厅4" onclick="selectRoom('大厅4')">
+                        <span class="room-name">大厅4</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="大厅5" onclick="selectRoom('大厅5')">
+                        <span class="room-name">大厅5</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="大厅6" onclick="selectRoom('大厅6')">
+                        <span class="room-name">大厅6</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="大厅7" onclick="selectRoom('大厅7')">
+                        <span class="room-name">大厅7</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="大厅8" onclick="selectRoom('大厅8')">
+                        <span class="room-name">大厅8</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="大厅9" onclick="selectRoom('大厅9')">
+                        <span class="room-name">大厅9</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                    <div class="room-button idle" data-room="大厅10" onclick="selectRoom('大厅10')">
+                        <span class="room-name">大厅10</span>
+                        <span class="room-status">空闲</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 房间管理页面 -->
+        <div id="room-page" class="page">
+            <header>
+                <button onclick="showPage('main-page')" class="back-btn">返回</button>
+                <h2 id="room-title">房间管理</h2>
+            </header>
+
+            <div class="room-actions">
+                <button onclick="startRoom()" class="action-btn start-btn">开房</button>
+                <button onclick="reserveRoom()" class="action-btn reserve-btn">预留</button>
+                <button onclick="pauseRoom()" class="action-btn pause-btn" style="display: none;">暂停</button>
+                <button onclick="resumeRoom()" class="action-btn resume-btn" style="display: none;">继续</button>
+                <button onclick="endRoom()" class="action-btn end-btn">结账</button>
+            </div>
+
+            <div class="room-info">
+                <div class="billing-section">
+                    <h3>计费信息</h3>
+                    <div class="billing-info">
+                        <p>开始时间: <span id="start-time">--</span></p>
+                        <p>已用时长: <span id="duration">0小时0分钟</span></p>
+                        <p>暂停时长: <span id="paused-duration">0小时0分钟</span></p>
+                        <p>实际时长: <span id="actual-duration">0小时0分钟</span></p>
+                        <p>房费: <span id="room-fee">0元</span></p>
+                        <p class="pause-status" id="pause-status" style="display: none;">状态: 已暂停</p>
+                    </div>
+                    <div class="rounding-options" style="display: none;">
+                        <button onclick="calculateBill('up')">向上取整</button>
+                        <button onclick="calculateBill('down')">向下取整</button>
+                    </div>
+                </div>
+
+                <div class="shopping-section">
+                    <h3>商品购买</h3>
+                    <div class="product-list">
+                        <select id="product-select">
+                            <option value="">选择商品</option>
+                        </select>
+                        <input type="number" id="product-quantity" placeholder="数量" min="1" value="1">
+                        <button onclick="addProduct()">添加</button>
+                    </div>
+                    <div class="cart" id="cart-items"></div>
+                    <p>商品总计: <span id="product-total">0元</span></p>
+                </div>
+
+                <div class="loan-section">
+                    <h3>借贷管理</h3>
+                    <div class="loan-actions">
+                        <input type="text" id="loan-customer-name" placeholder="客户姓名">
+                        <input type="number" id="loan-amount" placeholder="借出金额">
+                        <button onclick="addLoan()">借钱</button>
+                    </div>
+                    <div class="repay-actions">
+                        <select id="repay-customer">
+                            <option value="">选择客户</option>
+                        </select>
+                        <input type="number" id="repay-amount" placeholder="还款金额">
+                        <select id="repay-method">
+                            <option value="现金">现金</option>
+                            <option value="微信">微信</option>
+                            <option value="支付宝">支付宝</option>
+                        </select>
+                        <button onclick="repayLoan()">还钱</button>
+                    </div>
+                    <div class="loan-list" id="loan-list"></div>
+                    <p>欠款总计: <span id="loan-total">0元</span></p>
+                </div>
+
+                <div class="additional-services-section">
+                    <h3>附加服务</h3>
+                    <div class="service-item">
+                        <div class="service-header">
+                            <label>
+                                <input type="checkbox" id="ac-service" onchange="toggleService('ac')">
+                                空调 (<span id="ac-rate-display">5</span>元/小时)
+                            </label>
+                            <div class="service-controls">
+                                <button onclick="pauseService('ac')" id="pause-ac-btn" style="display: none;">暂停空调</button>
+                                <button onclick="resumeService('ac')" id="resume-ac-btn" style="display: none;">继续空调</button>
+                                <button onclick="stopService('ac')" id="stop-ac-btn" style="display: none;">停止空调</button>
+                            </div>
+                        </div>
+                        <div class="service-timing" id="ac-timing" style="display: none;">
+                            <p>空调开始: <span id="ac-start-time">--</span></p>
+                            <p>空调时长: <span id="ac-duration">0小时0分钟</span></p>
+                            <p>空调暂停: <span id="ac-paused-duration">0小时0分钟</span></p>
+                            <p>空调状态: <span id="ac-status">停止</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="service-item">
+                        <div class="service-header">
+                            <label>
+                                <input type="checkbox" id="heater-service" onchange="toggleService('heater')">
+                                烤火 (<span id="heater-rate-display">3</span>元/小时)
+                            </label>
+                            <div class="service-controls">
+                                <button onclick="pauseService('heater')" id="pause-heater-btn" style="display: none;">暂停烤火</button>
+                                <button onclick="resumeService('heater')" id="resume-heater-btn" style="display: none;">继续烤火</button>
+                                <button onclick="stopService('heater')" id="stop-heater-btn" style="display: none;">停止烤火</button>
+                            </div>
+                        </div>
+                        <div class="service-timing" id="heater-timing" style="display: none;">
+                            <p>烤火开始: <span id="heater-start-time">--</span></p>
+                            <p>烤火时长: <span id="heater-duration">0小时0分钟</span></p>
+                            <p>烤火暂停: <span id="heater-paused-duration">0小时0分钟</span></p>
+                            <p>烤火状态: <span id="heater-status">停止</span></p>
+                        </div>
+                    </div>
+                    
+                    <p>服务费: <span id="service-fee">0元</span></p>
+                    <p>过夜费: <span id="overnight-fee">0元</span></p>
+                </div>
+
+
+                <div class="total-section">
+                    <h3>总计</h3>
+                    <p>房费: <span id="final-room-fee">0元</span></p>
+                    <p>商品费: <span id="final-product-fee">0元</span></p>
+                    <p>服务费: <span id="final-service-fee">0元</span></p>
+                    <p>欠款: <span id="final-loan">0元</span></p>
+                    <p class="total">应收合计: <span id="grand-total">0元</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 后台管理页面 -->
+        <div id="admin-page" class="page">
+            <header>
+                <button onclick="showPage('main-page')" class="back-btn">返回</button>
+                <h2>后台管理</h2>
+            </header>
+
+            <div class="admin-tabs">
+                <button onclick="showAdminTab('rate-settings')" class="tab-btn active">费率设置</button>
+                <button onclick="showAdminTab('product-management')" class="tab-btn">商品管理</button>
+                <button onclick="showAdminTab('user-management')" class="tab-btn" id="user-management-tab">用户管理</button>
+            </div>
+
+            <!-- 费率设置 -->
+            <div id="rate-settings" class="admin-tab active">
+                <h3>房间费率设置</h3>
+                <div class="rate-section">
+                    <h4>大厅统一费率</h4>
+                    <input type="number" id="hall-rate" placeholder="大厅费率(元/4小时)">
+                    <button onclick="updateHallRate()">更新</button>
+                </div>
+
+                <div class="rate-section">
+                    <h4>包房费率</h4>
+                    <div id="private-room-rates"></div>
+                </div>
+
+                <div class="rate-section">
+                    <h4>计费设置</h4>
+                    <label>一场时长: 
+                        <input type="number" id="session-value" placeholder="数值" min="1" max="86400">
+                        <select id="session-unit">
+                            <option value="seconds">秒</option>
+                            <option value="minutes">分钟</option>
+                            <option value="hours" selected>小时</option>
+                        </select>
+                    </label>
+                    <button onclick="updateSessionHours()">更新</button>
+                    <p>当前设置: <span id="current-session-display">4小时</span></p>
+                </div>
+                
+                <div class="rate-section">
+                    <h4>其他费率</h4>
+                    <label>空调费率: <input type="number" id="ac-rate" placeholder="元/小时"></label>
+                    <label>烤火费率: <input type="number" id="heater-rate" placeholder="元/小时"></label>
+                    <label>过夜费率: <input type="number" id="overnight-rate" placeholder="元/小时"></label>
+                    <button onclick="updateOtherRates()">更新</button>
+                    <p style="color: #666; font-size: 0.9em; margin-top: 5px;">过夜费适用于凌晨12点至早上8点时段</p>
+                </div>
+            </div>
+
+            <!-- 商品管理 -->
+            <div id="product-management" class="admin-tab">
+                <h3>商品管理</h3>
+                <div class="add-product">
+                    <input type="text" id="new-product-name" placeholder="商品名称">
+                    <input type="number" id="new-product-price" placeholder="价格">
+                    <input type="number" id="new-product-stock" placeholder="库存">
+                    <button onclick="addNewProduct()">添加商品</button>
+                </div>
+                <div class="product-management-list" id="product-management-list"></div>
+            </div>
+
+            <!-- 用户管理 -->
+            <div id="user-management" class="admin-tab">
+                <h3>用户管理</h3>
+                <div class="add-user">
+                    <input type="text" id="new-username" placeholder="用户名">
+                    <input type="password" id="new-password" placeholder="密码">
+                    <input type="text" id="new-user-realname" placeholder="真实姓名">
+                    <select id="new-user-role">
+                        <option value="operator">操作员</option>
+                        <option value="admin">管理员</option>
+                    </select>
+                    <button onclick="addNewUser()">添加用户</button>
+                </div>
+                <div class="user-management-list" id="user-management-list"></div>
+            </div>
+        </div>
+
+        <!-- 每日明细页面 -->
+        <div id="report-page" class="page">
+            <header>
+                <button onclick="showPage('main-page')" class="back-btn">返回</button>
+                <h2>每日明细</h2>
+            </header>
+
+            <div class="report-filters">
+                <input type="date" id="report-date">
+                <select id="operator-filter">
+                    <option value="">所有操作员</option>
+                </select>
+                <button onclick="generateReport()">生成报表</button>
+                <button onclick="exportReportCSV()">导出CSV</button>
+                <button onclick="clearReports()" id="clear-reports-btn">清空记录</button>
+            </div>
+
+            <div class="report-content">
+                <div class="report-section">
+                    <h3>房间消费明细</h3>
+                    <div id="room-report"></div>
+                </div>
+                <div class="report-section">
+                    <h3>统计总计</h3>
+                    <div id="total-report"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
