@@ -459,6 +459,7 @@ header h1, header h2 {
     border-radius: 5px;
     cursor: pointer;
     color: white;
+    background: #32cd32;
 }
 
 .report-filters button:first-of-type {
