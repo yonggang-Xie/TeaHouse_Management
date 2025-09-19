@@ -1809,6 +1809,178 @@ header h2 {
     scrollbar-color: var(--matcha) var(--washi);
 }
 
+/* ===== 页脚版权信息 - 老爷子工作室标识 ===== */
+.powered-by-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, 
+        rgba(248, 244, 236, 0.92) 0%, 
+        rgba(242, 232, 222, 0.95) 100%);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--gentle-border);
+    padding: var(--space-sm) 0;
+    z-index: 1000;
+    box-shadow: 
+        0 -2px 12px rgba(107, 88, 69, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.powered-by-text {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: var(--weight-regular);
+    letter-spacing: 0.02em;
+    opacity: 0.8;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.powered-by-footer:hover .powered-by-text {
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.powered-label {
+    color: var(--clay);
+    font-style: italic;
+    font-weight: var(--weight-light);
+    font-size: 0.8rem;
+}
+
+.studio-name {
+    color: var(--cedar);
+    font-weight: var(--weight-semibold);
+    position: relative;
+    background: linear-gradient(135deg, var(--matcha) 0%, var(--bamboo) 100%);
+    background-size: 100% 2px;
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    padding-bottom: 2px;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.studio-name::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 4px;
+    background: radial-gradient(circle, var(--matcha) 0%, var(--bamboo) 100%);
+    border-radius: 50%;
+    opacity: 0.7;
+}
+
+.studio-name::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 4px;
+    background: radial-gradient(circle, var(--bamboo) 0%, var(--matcha) 100%);
+    border-radius: 50%;
+    opacity: 0.7;
+}
+
+.powered-by-footer:hover .studio-name {
+    background-size: 100% 3px;
+    color: var(--sumi);
+}
+
+.powered-by-footer:hover .studio-name::before,
+.powered-by-footer:hover .studio-name::after {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.2);
+}
+
+/* 为页面主体添加底部边距，避免被固定页脚遮挡 */
+body {
+    padding-bottom: 50px;
+}
+
+#app {
+    margin-bottom: var(--space-lg);
+}
+
+/* 登录页面特殊处理 - 页脚在登录页面时稍微透明 */
+#login-page.active ~ .powered-by-footer {
+    background: linear-gradient(135deg, 
+        rgba(248, 244, 236, 0.85) 0%, 
+        rgba(242, 232, 222, 0.88) 100%);
+    backdrop-filter: blur(8px);
+}
+
+#login-page.active ~ .powered-by-footer .powered-by-text {
+    opacity: 0.7;
+}
+
+/* 响应式设计适配 */
+@media (max-width: 768px) {
+    .powered-by-text {
+        font-size: 0.75rem;
+        gap: var(--space-xs);
+    }
+    
+    .powered-label {
+        font-size: 0.7rem;
+    }
+    
+    .studio-name::before,
+    .studio-name::after {
+        width: 3px;
+        height: 3px;
+        left: -4px;
+        right: -4px;
+    }
+    
+    body {
+        padding-bottom: 45px;
+    }
+}
+
+/* 高对比度模式适配 */
+@media (prefers-contrast: high) {
+    .powered-by-footer {
+        background: rgba(248, 244, 236, 0.98);
+        border-top-width: 2px;
+    }
+    
+    .powered-by-text {
+        opacity: 0.9;
+    }
+    
+    .powered-label {
+        color: var(--cedar);
+    }
+    
+    .studio-name {
+        color: var(--sumi);
+    }
+}
+
+/* 打印时隐藏页脚 */
+@media print {
+    .powered-by-footer {
+        display: none !important;
+    }
+    
+    body {
+        padding-bottom: 0 !important;
+    }
+    
+    #app {
+        margin-bottom: 0 !important;
+    }
+}
+
 /* ===== 侘寂自然风格完成 ===== */
 /* 
 这个CSS系统实现了完整的侘寂自然美学：
@@ -1820,4 +1992,5 @@ header h2 {
 - 自然的动画过渡效果
 - 完整的响应式适配
 - 无障碍访问支持
+- 精美的页脚版权标识
 */
