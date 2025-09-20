@@ -350,12 +350,18 @@
             </header>
 
             <div class="report-filters">
-                <input type="date" id="report-date">
+                <div class="date-range">
+                    <label>开始日期:</label>
+                    <input type="date" id="report-start-date">
+                    <label>结束日期:</label>
+                    <input type="date" id="report-end-date">
+                </div>
                 <select id="operator-filter">
                     <option value="">所有操作员</option>
                 </select>
                 <button onclick="generateReport()">生成报表</button>
-                <button onclick="exportReportCSV()">下载表格</button>
+                <button onclick="exportReportCSVRange()">下载日期范围表格</button>
+                <button onclick="autoDownloadYesterdayReport()">手动下载昨日报表</button>
                 <button onclick="clearReports()" id="clear-reports-btn">清空记录</button>
             </div>
 
@@ -373,13 +379,13 @@
     </div>
 
     <!-- 页脚版权信息 -->
-    <footer class="powered-by-footer">
+    <footer id="page-footer" class="powered-by-footer">
         <div class="powered-by-text">
             <span class="powered-label">Powered by</span>
             <span class="studio-name">老爷子工作室</span>
         </div>
     </footer>
 
-    <script src="script.js"></script>
+    <script src="script_v1.js"></script>
 </body>
 </html>

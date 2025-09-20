@@ -169,6 +169,10 @@ function showMainSystem() {
     updateRoomDisplay();
     setDefaultDate();
     updatePermissions();
+    setupAutoDownload(); // 启动自动下载功能
+    
+    // 添加脚注动画效果
+    initFooterAnimation();
 }
 
 // 登录功能
@@ -250,6 +254,12 @@ function showPage(pageId) {
     });
     document.getElementById(pageId).classList.add('active');
     
+    // 确保脚注始终显示
+    const footer = document.getElementById('page-footer');
+    if (footer) {
+        footer.style.display = 'block';
+    }
+    
     if (pageId === 'admin-page') {
         loadAdminData();
     } else if (pageId === 'report-page') {
@@ -312,11 +322,37 @@ function updateRoomInfo() {
         document.getElementById('pause-status').style.display = 'none';
     }
     
-    // 更新服务选项状态和费率显示
-    document.getElementById('ac-service').checked = room.services.ac || false;
-    document.getElementById('heater-service').checked = room.services.heater || false;
+    // 更新服务选项状态和费率显示 - 确保每个房间完全独立
+    // 正确检查服务对象结构，确保每个房间的UI独立显示
+    const acActive = room.services.ac && typeof room.services.ac === 'object' && room.services.ac.active;
+    const heaterActive = room.services.heater && typeof room.services.heater === 'object' && room.services.heater.active;
+    document.getElementById('ac-service').checked = acActive || false;
+    document.getElementById('heater-service').checked = heaterActive || false;
     document.getElementById('ac-rate-display').textContent = rates.ac || 5;
     document.getElementById('heater-rate-display').textContent = rates.heater || 3;
+    
+    // 关键：切换房间时，根据当前房间的服务状态更新显示
+    // 空调服务显示更新
+    if (acActive) {
+        updateServiceDisplay('ac');
+    } else {
+        // 隐藏空调的计时信息
+        document.getElementById('ac-timing').style.display = 'none';
+        document.getElementById('pause-ac-btn').style.display = 'none';
+        document.getElementById('resume-ac-btn').style.display = 'none';
+        document.getElementById('stop-ac-btn').style.display = 'none';
+    }
+    
+    // 烤火服务显示更新
+    if (heaterActive) {
+        updateServiceDisplay('heater');
+    } else {
+        // 隐藏烤火的计时信息
+        document.getElementById('heater-timing').style.display = 'none';
+        document.getElementById('pause-heater-btn').style.display = 'none';
+        document.getElementById('resume-heater-btn').style.display = 'none';
+        document.getElementById('stop-heater-btn').style.display = 'none';
+    }
     
     // 更新商品列表
     updateCart();
@@ -397,11 +433,22 @@ function startTimer() {
         if (currentRoom && rooms[currentRoom].status === 'occupied') {
             updateDuration();
             updateTotal();
-            // 更新服务显示
+            // 更新服务显示 - 只更新当前房间的服务
             ['ac', 'heater'].forEach(serviceType => {
                 const room = rooms[currentRoom];
-                if (room.services && room.services[serviceType] && typeof room.services[serviceType] === 'object') {
+                if (room.services && room.services[serviceType] && typeof room.services[serviceType] === 'object' && room.services[serviceType].active) {
                     updateServiceDisplay(serviceType);
+                } else {
+                    // 如果服务未激活，确保隐藏对应的时间显示
+                    const timingDiv = document.getElementById(`${serviceType}-timing`);
+                    const pauseBtn = document.getElementById(`pause-${serviceType}-btn`);
+                    const resumeBtn = document.getElementById(`resume-${serviceType}-btn`);
+                    const stopBtn = document.getElementById(`stop-${serviceType}-btn`);
+                    
+                    if (timingDiv) timingDiv.style.display = 'none';
+                    if (pauseBtn) pauseBtn.style.display = 'none';
+                    if (resumeBtn) resumeBtn.style.display = 'none';
+                    if (stopBtn) stopBtn.style.display = 'none';
                 }
             });
         }
@@ -1032,7 +1079,7 @@ function stopService(serviceType) {
     alert(`${serviceType === 'ac' ? '空调' : '烤火'}已停止`);
 }
 
-// 更新服务显示
+// 更新服务显示 - 完全重构，确保每个房间独立显示
 function updateServiceDisplay(serviceType) {
     if (!currentRoom) return;
     
@@ -1047,6 +1094,7 @@ function updateServiceDisplay(serviceType) {
     const resumeBtn = document.getElementById(`resume-${serviceType}-btn`);
     const stopBtn = document.getElementById(`stop-${serviceType}-btn`);
     
+    // 只有当前房间选择了对应服务，才显示时间信息和控制按钮
     if (service.active) {
         // 显示计时信息
         timingDiv.style.display = 'block';
@@ -1088,7 +1136,7 @@ function updateServiceDisplay(serviceType) {
         stopBtn.style.display = 'inline-block';
         
     } else {
-        // 隐藏计时信息和按钮
+        // 隐藏计时信息和按钮 - 只有当前房间没选择对应服务时才隐藏
         timingDiv.style.display = 'none';
         pauseBtn.style.display = 'none';
         resumeBtn.style.display = 'none';
@@ -1168,39 +1216,42 @@ function calculateIndividualServiceFee(serviceType) {
 // 计算过夜费
 function calculateOvernightFee() {
     if (!currentRoom || !rooms[currentRoom].startTime) return 0;
-    
+
     const room = rooms[currentRoom];
-    const startTime = new Date(room.startTime);
-    const endTime = new Date();
-    
+    const start = new Date(room.startTime);
+    // 暂停即停止计时：若当前处于暂停中，则以暂停开始时间作为计算终点
+    const end = (room.isPaused && room.pauseStart) ? new Date(room.pauseStart) : new Date();
+
+    // 对齐到整点边界，逐小时判断与 [start, end) 是否有重叠
+    const hourStart = new Date(start);
+    hourStart.setMinutes(0, 0, 0);
+    const hourEnd = new Date(end);
+    if (hourEnd.getMinutes() !== 0 || hourEnd.getSeconds() !== 0 || hourEnd.getMilliseconds() !== 0) {
+        hourEnd.setHours(hourEnd.getHours() + 1, 0, 0, 0);
+    }
+
     let overnightHours = 0;
-    let currentDate = new Date(startTime);
-    
-    // 逐小时检查是否在过夜时段（凌晨12点-8点）
-    while (currentDate < endTime) {
-        const hour = currentDate.getHours();
-        if (hour >= 0 && hour < 8) { // 凌晨12点(0时)到早上8点
-            overnightHours += 1;
+    for (let t = new Date(hourStart); t < hourEnd; t.setHours(t.getHours() + 1)) {
+        const slotStart = new Date(t);
+        const slotEnd = new Date(t);
+        slotEnd.setHours(slotEnd.getHours() + 1);
+
+        // 与真实使用区间 [start, end) 是否有重叠
+        const overlapStart = Math.max(slotStart.getTime(), start.getTime());
+        const overlapEnd = Math.min(slotEnd.getTime(), end.getTime());
+        const overlaps = overlapStart < overlapEnd;
+
+        const h = slotStart.getHours();
+        const isOvernightHour = h >= 0 && h < 8;
+
+        if (isOvernightHour && overlaps) {
+            overnightHours += 1; // 任意部分重叠即按“整小时”计费
         }
-        currentDate.setHours(currentDate.getHours() + 1);
     }
-    
-    // 减去暂停时间中的过夜时长
-    let pausedTime = room.pausedTime || 0;
-    if (room.isPaused && room.pauseStart) {
-        pausedTime += Date.now() - room.pauseStart;
-    }
-    
-    // 计算暂停时间中的过夜小时数
-    if (pausedTime > 0) {
-        const pausedHours = pausedTime / (1000 * 60 * 60);
-        // 简化处理：按比例减少过夜费用
-        const pausedRatio = pausedHours / ((endTime - startTime) / (1000 * 60 * 60));
-        overnightHours = Math.max(0, overnightHours * (1 - pausedRatio));
-    }
-    
-    const overnightFee = overnightHours * (rates.overnight || 10);
-    return Math.round(overnightFee * 100) / 100; // 保留两位小数
+
+    const rate = rates.overnight || 10;
+    const fee = overnightHours * rate;
+    return Math.round(fee * 100) / 100;
 }
 
 // 更新总计
@@ -1801,7 +1852,8 @@ function setDefaultDate() {
     const dateStr = now.getFullYear() + '-' + 
                    String(now.getMonth() + 1).padStart(2, '0') + '-' + 
                    String(now.getDate()).padStart(2, '0');
-    document.getElementById('report-date').value = dateStr;
+    document.getElementById('report-start-date').value = dateStr;
+    document.getElementById('report-end-date').value = dateStr;
 }
 
 
@@ -1905,17 +1957,24 @@ function generateTotalReport(dayTransactions) {
     totalReportDiv.innerHTML = html;
 }
 
-// 导出每日明细为 CSV
+// 导出每日明细为 CSV（单日导出）
 function exportReportCSV() {
-    const selectedDate = document.getElementById('report-date').value;
+    const startDate = document.getElementById('report-start-date').value;
+    const endDate = document.getElementById('report-end-date').value;
     const selectedOperator = document.getElementById('operator-filter').value;
-    if (!selectedDate) {
-        alert('请选择日期');
+    
+    if (!startDate || !endDate) {
+        alert('请选择开始和结束日期');
+        return;
+    }
+    
+    if (startDate !== endDate) {
+        alert('请使用"下载日期范围表格"按钮导出多日期范围的数据');
         return;
     }
 
     // 筛选当日交易
-    let dayTransactions = transactions.filter(t => t.date === selectedDate);
+    let dayTransactions = transactions.filter(t => t.date === startDate);
     if (selectedOperator) {
         dayTransactions = dayTransactions.filter(t => t.operator === selectedOperator);
     }
@@ -2065,6 +2124,414 @@ function exportReportCSV() {
         // 始终用引号包裹，避免逗号/换行/数字被 Excel 误判
         return `"${escaped}"`;
     }
+}
+
+// 导出日期范围表格为 CSV
+function exportReportCSVRange() {
+    const startDate = document.getElementById('report-start-date').value;
+    const endDate = document.getElementById('report-end-date').value;
+    const selectedOperator = document.getElementById('operator-filter').value;
+    
+    if (!startDate || !endDate) {
+        alert('请选择开始和结束日期');
+        return;
+    }
+    
+    if (startDate > endDate) {
+        alert('开始日期不能晚于结束日期');
+        return;
+    }
+
+    // 筛选日期范围内的交易
+    let rangeTransactions = transactions.filter(t => t.date >= startDate && t.date <= endDate);
+    if (selectedOperator) {
+        rangeTransactions = rangeTransactions.filter(t => t.operator === selectedOperator);
+    }
+    if (rangeTransactions.length === 0) {
+        const who = selectedOperator ? `（操作员：${selectedOperator}）` : '';
+        alert(`选定日期范围内${who}无交易记录，无法导出`);
+        return;
+    }
+
+    // CSV头部
+    const roomHeaders = [
+        '日期',
+        '房间',
+        '开始时间',
+        '操作员',
+        '使用时长',
+        '实际时长',
+        '房费',
+        '服务费',
+        '过夜时长',
+        '过夜费',
+        '商品消费',
+        '折扣',
+        '实际房间收入',
+        '商品明细'
+    ];
+
+    const lines = [];
+
+    // 顶部说明
+    const filterText = selectedOperator ? `操作员: ${selectedOperator}` : '全部操作员';
+    lines.push(csvRow(['报表日期范围', `${startDate} 至 ${endDate}`]));
+    lines.push(csvRow(['筛选条件', filterText]));
+    lines.push(''); // 空行分隔
+
+    // 房间消费明细
+    lines.push('房间消费明细');
+    lines.push(csvRow(roomHeaders));
+
+    // 统计项
+    let totalBasicRoomFee = 0;
+    let totalServiceFee = 0;
+    let totalOvernightFee = 0;
+    let totalProductFee = 0;
+    let grandTotal = 0;
+
+    rangeTransactions.forEach(tr => {
+        // 计算过夜费
+        let overnightHours = 0;
+        let overnightFee = 0;
+        if (tr.startTime) {
+            const startTime = new Date(tr.startTime);
+            const endTime = new Date(`${tr.date} ${tr.time}`);
+            let currentTime = new Date(startTime);
+            while (currentTime < endTime) {
+                const hour = currentTime.getHours();
+                if (hour >= 0 && hour < 8) {
+                    overnightHours += 1;
+                }
+                currentTime.setHours(currentTime.getHours() + 1);
+            }
+            if (overnightHours > 0) {
+                overnightFee = overnightHours * (rates.overnight || 10);
+            }
+        }
+        const overnightDurationStr = `${overnightHours}小时`;
+
+        // 服务费（不含过夜）
+        const totalTransactionServiceFee = tr.serviceFee || 0;
+        let transactionServiceFee = totalTransactionServiceFee - overnightFee;
+        if (transactionServiceFee < 0) transactionServiceFee = 0;
+
+        // 折扣与实际收入
+        const receivableTotal = tr.receivableTotal || ((tr.roomFee || 0) + (tr.productFee || 0) + (tr.serviceFee || 0));
+        const actualAmount = tr.actualAmount || tr.total || 0;
+        const discount = receivableTotal - actualAmount;
+
+        // 商品明细
+        const productDetail = (tr.products && tr.products.length > 0)
+            ? tr.products.map(p => `${p.name} x${p.quantity} = ${(p.price * p.quantity)}元`).join('; ')
+            : '无';
+
+        // 推入明细行
+        lines.push(csvRow([
+            tr.date,
+            tr.room || '',
+            tr.startTime ? new Date(tr.startTime).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) : '',
+            tr.operator || '',
+            tr.duration || '',
+            tr.actualDuration || tr.duration || '',
+            money(tr.roomFee),
+            money(transactionServiceFee),
+            overnightDurationStr,
+            money(overnightFee),
+            money(tr.productFee),
+            money(discount),
+            money(actualAmount),
+            productDetail
+        ]));
+
+        // 累计统计
+        totalBasicRoomFee += tr.roomFee || 0;
+        totalServiceFee += transactionServiceFee;
+        totalOvernightFee += overnightFee;
+        totalProductFee += tr.productFee || 0;
+        grandTotal += actualAmount;
+    });
+
+    // 统计总计部分
+    lines.push(''); // 空行分隔
+    lines.push('统计总计');
+    const totalsTable = [
+        ['基础房费', money(totalBasicRoomFee)],
+        ['服务费', money(totalServiceFee)],
+        ['过夜费', money(totalOvernightFee)],
+        ['商品消费', money(totalProductFee)],
+        ['交易笔数', String(rangeTransactions.length)],
+        ['总收入', money(grandTotal)]
+    ];
+    totalsTable.forEach(row => lines.push(csvRow(row)));
+
+    // 生成并下载 CSV（含 BOM，便于 Excel 正确识别 UTF-8）
+    const filename = `茶坊报表_${startDate}_至_${endDate}${selectedOperator ? '_' + selectedOperator : ''}.csv`;
+    const csvContent = '\uFEFF' + lines.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    // 辅助函数
+    function money(n) {
+        const v = parseFloat(n || 0);
+        return `${v.toFixed(2)}元`;
+    }
+
+    function csvRow(arr) {
+        return arr.map(csvEscape).join(',');
+    }
+
+    function csvEscape(val) {
+        const s = (val === undefined || val === null) ? '' : String(val);
+        const escaped = s.replace(/"/g, '""');
+        return `"${escaped}"`;
+    }
+}
+
+// 检查并创建报表文件夹
+function ensureReportsFolder() {
+    const fs = require('fs');
+    const path = require('path');
+    const reportsFolder = path.join(__dirname, '报表文件夹');
+    
+    if (!fs.existsSync(reportsFolder)) {
+        fs.mkdirSync(reportsFolder, { recursive: true });
+    }
+    
+    return reportsFolder;
+}
+
+// 自动下载前一天的报表（浏览器兼容版本）
+function autoDownloadYesterdayReport() {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.getFullYear() + '-' + 
+                        String(yesterday.getMonth() + 1).padStart(2, '0') + '-' + 
+                        String(yesterday.getDate()).padStart(2, '0');
+    
+    // 筛选前一天的交易
+    const yesterdayTransactions = transactions.filter(t => t.date === yesterdayStr);
+    
+    if (yesterdayTransactions.length === 0) {
+        alert(`前一天(${yesterdayStr})无交易记录，无法生成报表`);
+        return;
+    }
+    
+    try {
+        // CSV头部
+        const roomHeaders = [
+            '日期',
+            '房间',
+            '开始时间',
+            '操作员',
+            '使用时长',
+            '实际时长',
+            '房费',
+            '服务费',
+            '过夜时长',
+            '过夜费',
+            '商品消费',
+            '折扣',
+            '实际房间收入',
+            '商品明细'
+        ];
+
+        const lines = [];
+
+        // 顶部说明
+        lines.push(csvRow(['报表日期', yesterdayStr]));
+        lines.push(csvRow(['生成时间', new Date().toLocaleString('zh-CN')])); 
+        lines.push(csvRow(['类型', '自动下载报表']));
+        lines.push(''); // 空行分隔
+
+        // 房间消费明细
+        lines.push('房间消费明细');
+        lines.push(csvRow(roomHeaders));
+
+        // 统计项
+        let totalBasicRoomFee = 0;
+        let totalServiceFee = 0;
+        let totalOvernightFee = 0;
+        let totalProductFee = 0;
+        let grandTotal = 0;
+
+        yesterdayTransactions.forEach(tr => {
+            // 计算过夜费
+            let overnightHours = 0;
+            let overnightFee = 0;
+            if (tr.startTime) {
+                const startTime = new Date(tr.startTime);
+                const endTime = new Date(`${tr.date} ${tr.time}`);
+                let currentTime = new Date(startTime);
+                while (currentTime < endTime) {
+                    const hour = currentTime.getHours();
+                    if (hour >= 0 && hour < 8) {
+                        overnightHours += 1;
+                    }
+                    currentTime.setHours(currentTime.getHours() + 1);
+                }
+                if (overnightHours > 0) {
+                    overnightFee = overnightHours * (rates.overnight || 10);
+                }
+            }
+            const overnightDurationStr = `${overnightHours}小时`;
+
+            // 服务费（不含过夜）
+            const totalTransactionServiceFee = tr.serviceFee || 0;
+            let transactionServiceFee = totalTransactionServiceFee - overnightFee;
+            if (transactionServiceFee < 0) transactionServiceFee = 0;
+
+            // 折扣与实际收入
+            const receivableTotal = tr.receivableTotal || ((tr.roomFee || 0) + (tr.productFee || 0) + (tr.serviceFee || 0));
+            const actualAmount = tr.actualAmount || tr.total || 0;
+            const discount = receivableTotal - actualAmount;
+
+            // 商品明细
+            const productDetail = (tr.products && tr.products.length > 0)
+                ? tr.products.map(p => `${p.name} x${p.quantity} = ${(p.price * p.quantity)}元`).join('; ')
+                : '无';
+
+            // 推入明细行
+            lines.push(csvRow([
+                tr.date,
+                tr.room || '',
+                tr.startTime ? new Date(tr.startTime).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) : '',
+                tr.operator || '',
+                tr.duration || '',
+                tr.actualDuration || tr.duration || '',
+                money(tr.roomFee),
+                money(transactionServiceFee),
+                overnightDurationStr,
+                money(overnightFee),
+                money(tr.productFee),
+                money(discount),
+                money(actualAmount),
+                productDetail
+            ]));
+
+            // 累计统计
+            totalBasicRoomFee += tr.roomFee || 0;
+            totalServiceFee += transactionServiceFee;
+            totalOvernightFee += overnightFee;
+            totalProductFee += tr.productFee || 0;
+            grandTotal += actualAmount;
+        });
+
+        // 统计总计部分
+        lines.push(''); // 空行分隔
+        lines.push('统计总计');
+        const totalsTable = [
+            ['基础房费', money(totalBasicRoomFee)],
+            ['服务费', money(totalServiceFee)],
+            ['过夜费', money(totalOvernightFee)],
+            ['商品消费', money(totalProductFee)],
+            ['交易笔数', String(yesterdayTransactions.length)],
+            ['总收入', money(grandTotal)]
+        ];
+        totalsTable.forEach(row => lines.push(csvRow(row)));
+
+        // 浏览器下载方式
+        const filename = `自动报表_${yesterdayStr}.csv`;
+        const csvContent = '\uFEFF' + lines.join('\n');
+        
+        // 创建Blob并下载
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert(`前一天报表已生成并下载: ${filename}`);
+        
+        // 辅助函数
+        function money(n) {
+            const v = parseFloat(n || 0);
+            return `${v.toFixed(2)}元`;
+        }
+
+        function csvRow(arr) {
+            return arr.map(csvEscape).join(',');
+        }
+
+        function csvEscape(val) {
+            const s = (val === undefined || val === null) ? '' : String(val);
+            const escaped = s.replace(/"/g, '""');
+            return `"${escaped}"`;
+        }
+        
+    } catch (error) {
+        console.error('自动下载前一天报表失败:', error);
+        alert('自动下载报表失败: ' + error.message);
+    }
+}
+
+// 设置定时任务 - 每天早上8点自动下载前一天报表（浏览器版本）
+function setupAutoDownload() {
+    setInterval(() => {
+        const now = new Date();
+        // 检查是否是早上8点 (8:00)
+        if (now.getHours() === 8 && now.getMinutes() === 0) {
+            autoDownloadYesterdayReport();
+        }
+    }, 60000); // 每分钟检查一次
+    
+    console.log('自动下载功能已启动，将在每天早上8点自动下载前一天报表');
+    alert('自动下载功能已启动，将在每天早上8点自动下载前一天报表');
+}
+
+// 初始化脚注动画
+function initFooterAnimation() {
+    const footer = document.getElementById('page-footer');
+    if (!footer) return;
+    
+    // 添加鼠标悬停效果
+    footer.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-2px) scale(1.05)';
+    });
+    
+    footer.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0) scale(1)';
+    });
+    
+    // 添加点击效果
+    footer.addEventListener('click', function() {
+        this.style.transform = 'translateY(-2px) scale(0.95)';
+        setTimeout(() => {
+            this.style.transform = 'translateY(-2px) scale(1.05)';
+        }, 150);
+        
+        // 添加特殊动画效果（只播放一次）
+        this.style.animation = 'none';
+        setTimeout(() => {
+            this.style.animation = 'sparkle 2s';
+        }, 10);
+        
+        // 2秒后移除动画
+        setTimeout(() => {
+            this.style.animation = 'none';
+        }, 2010);
+    });
+    
+    // 添加随机闪烁效果
+    setInterval(() => {
+        if (Math.random() > 0.8) {
+            footer.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.6), 0 0 20px rgba(118, 75, 162, 0.4)';
+            setTimeout(() => {
+                footer.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+            }, 1000);
+        }
+    }, 5000);
 }
 
 // 清空报表记录
@@ -2236,31 +2703,38 @@ function loadOperatorFilter() {
 
 // 生成报表（支持操作员筛选）
 function generateReport() {
-    const selectedDate = document.getElementById('report-date').value;
+    const startDate = document.getElementById('report-start-date').value;
+    const endDate = document.getElementById('report-end-date').value;
     const selectedOperator = document.getElementById('operator-filter').value;
     
-    if (!selectedDate) {
-        alert('请选择日期');
+    if (!startDate || !endDate) {
+        alert('请选择开始和结束日期');
         return;
     }
     
-    let dayTransactions = transactions.filter(t => t.date === selectedDate);
+    if (startDate > endDate) {
+        alert('开始日期不能晚于结束日期');
+        return;
+    }
+    
+    // 筛选日期范围内的交易
+    let rangeTransactions = transactions.filter(t => t.date >= startDate && t.date <= endDate);
     
     // 如果选择了特定操作员，进行筛选
     if (selectedOperator) {
-        dayTransactions = dayTransactions.filter(t => t.operator === selectedOperator);
+        rangeTransactions = rangeTransactions.filter(t => t.operator === selectedOperator);
     }
     
     // 先生成统计总计，确保总计可见；房间明细中的异常不影响总计
     try {
-        generateTotalReport(dayTransactions, selectedOperator);
+        generateTotalReport(rangeTransactions, selectedOperator);
     } catch (e) {
         console.error('generateTotalReport error:', e);
         const el = document.getElementById('total-report');
         if (el) el.innerHTML = '<p>统计总计计算出错</p>';
     }
     try {
-        generateRoomReport(dayTransactions, selectedOperator);
+        generateRoomReport(rangeTransactions, selectedOperator);
     } catch (e) {
         console.error('generateRoomReport error:', e);
         const el = document.getElementById('room-report');
@@ -2278,7 +2752,7 @@ function generateRoomReport(dayTransactions, selectedOperator) {
         return;
     }
     
-    let html = '<table class="report-table room-report-table"><thead><tr><th>房间（商品消费明细下拉菜单选项图标）</th><th>开始时间</th><th>操作员</th><th>使用时长</th><th>实际时长</th><th>房费</th><th>服务费</th><th>过夜时长</th><th>过夜费</th><th>商品消费</th><th>折扣</th><th>实际房间收入</th></tr></thead><tbody>';
+    let html = '<table class="report-table room-report-table"><thead><tr><th>房间</th><th>开始时间</th><th>操作员</th><th>使用时长</th><th>实际时长</th><th>房费</th><th>服务费</th><th>过夜时长</th><th>过夜费</th><th>商品消费</th><th>折扣</th><th>实际房间收入</th></tr></thead><tbody>';
     
     let totalRoomFee = 0;
     let totalServiceFee = 0;
