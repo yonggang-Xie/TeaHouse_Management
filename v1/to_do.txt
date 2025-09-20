@@ -1,0 +1,3 @@
+resume auto download.
+modify room infomation.
+Improve check out workflow UI.
